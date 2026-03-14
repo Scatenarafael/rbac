@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+PROJECT_ROOT = Path(__file__).resolve().parents[5]
+REFRESH_USECASE_FILE = PROJECT_ROOT / "src/modules/auth/application/usecases/refresh_session_usecase.py"
+
+
+def test_t3_refresh_session_usecase_file_exists() -> None:
+    if not REFRESH_USECASE_FILE.exists():
+        pytest.fail(
+            "Arquivo esperado ainda não implementado: src/modules/auth/application/usecases/refresh_session_usecase.py"
+        )
+
+
+def test_t3_refresh_session_usecase_contract() -> None:
+    if not REFRESH_USECASE_FILE.exists():
+        pytest.fail("RefreshSessionUseCase ainda não implementado para validar contrato.")
+
+    source = REFRESH_USECASE_FILE.read_text()
+    assert "class RefreshSessionUseCase" in source
+    assert "async def execute" in source
+    assert "JWTService" in source
+    assert "RefreshTokenSecurity" in source
+    assert "IRefreshSessionRepository" in source
+    assert "rotate" in source or "replaced_by_token_jti" in source
