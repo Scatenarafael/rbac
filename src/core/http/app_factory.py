@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import MetaData
+from src.modules.auth.presentation.http.routers.auth_router import router as auth_router
 
 # from src.core.errors.base import BaseAppException
 # from src.core.http.exception_handlers import (
@@ -78,7 +79,7 @@ def create_app() -> FastAPI:
     # # from src.modules.core.interfaces.http.routers.users import router as users_router
     # # app.include_router(users_router, prefix="/api")
 
-    # app.include_router(auth_router.router)
+    app.include_router(auth_router)
     # app.include_router(email_router.router)
     # app.include_router(user_router.router)
 
