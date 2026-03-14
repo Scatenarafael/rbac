@@ -28,6 +28,8 @@ class Settings(BaseSettings):
 
     COOKIE_HTTPONLY: bool = True
 
+    COOKIE_DOMAIN: str | None = os.getenv("COOKIE_DOMAIN")
+
     DATABASE_URI: str = os.getenv("DATABASE_URI", "sqlite:///./test.db")
 
     SERVER_URL: str = os.getenv("SERVER_URL", "http://localhost:8005/api")

@@ -37,6 +37,7 @@ class RefreshSessionUseCase:
         self._refresh_token_security = refresh_token_security
 
     async def execute(self, *, refresh_token: str) -> RefreshSessionResult:
+        # Logical transaction boundary for refresh token rotation.
         payload = self._jwt_service.decode_token(refresh_token, expected_type="refresh")
 
         session_jti = str(payload.get("jti", "")).strip()
@@ -46,6 +47,13 @@ class RefreshSessionUseCase:
         session = await self._refresh_session_repository.get_by_jti(session_jti)
         if session is None:
             raise ValidationError("Refresh session not found.")
+
+        # Reuse detection: if this token already rotated once, it was reused.
+        # The replaced_by_token_jti marker is our idempotency and theft signal.
+        replaced_by_token_jti = session.replaced_by_token_jti
+        if replaced_by_token_jti is not None:
+            await self._revoke_all_user_sessions(session.user_id)
+            raise ValidationError("Refresh token reuse detected.")
 
         if not session.is_active():
             raise ValidationError("Refresh session is not active.")
@@ -92,3 +100,11 @@ class RefreshSessionUseCase:
             access_token=new_access_token,
             refresh_token=new_refresh_token,
         )
+
+    async def _revoke_all_user_sessions(self, user_id: UUID) -> None:
+        sessions = await self._refresh_session_repository.list_by_user_id(user_id)
+        for existing_session in sessions:
+            if existing_session.is_revoked:
+                continue
+            existing_session.revoke()
+            await self._refresh_session_repository.update(existing_session.id, existing_session)

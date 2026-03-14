@@ -66,7 +66,7 @@ class RefreshSessionRepositorySQLModel(IRefreshSessionRepository):
 
     async def get_by_jti(self, jti: str) -> RefreshSession | None:
         result = await self.session.execute(
-            select(RefreshSessionModel).where(RefreshSessionModel.token_jti == jti.strip())
+            select(RefreshSessionModel).where(RefreshSessionModel.token_jti == jti.strip()).with_for_update()
         )
         model = result.scalar_one_or_none()
         if model is None:
