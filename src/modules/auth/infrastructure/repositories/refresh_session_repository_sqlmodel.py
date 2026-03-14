@@ -72,3 +72,10 @@ class RefreshSessionRepositorySQLModel(IRefreshSessionRepository):
         if model is None:
             return None
         return to_domain(model)
+
+    async def list_by_user_id(self, user_id: UUID) -> list[RefreshSession]:
+        result = await self.session.execute(
+            select(RefreshSessionModel).where(RefreshSessionModel.user_id == user_id)
+        )
+        models = result.scalars().all()
+        return [to_domain(model) for model in models]

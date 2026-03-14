@@ -9,3 +9,7 @@ class IRefreshSessionRepository(IRepositoryBase[RefreshSession, UUID]):
     @abstractmethod
     async def get_by_jti(self, jti: str) -> RefreshSession | None:
         pass
+
+    @abstractmethod
+    async def list_by_user_id(self, user_id: UUID) -> list[RefreshSession]:
+        pass
