@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import MetaData
+
+from src.core.config.config import get_settings
+from src.modules.auth.application.services.auth_production_validator import AuthProductionValidator
 from src.modules.auth.presentation.http.routers.auth_router import router as auth_router
 
 # from src.core.errors.base import BaseAppException
@@ -37,6 +40,12 @@ def create_app() -> FastAPI:
     # configure_logging(level="INFO")
 
     app = FastAPI()
+    settings = get_settings()
+
+    # Production checklist validation should run on startup before serving requests.
+    if "localhost" not in settings.SERVER_URL:
+        validator = AuthProductionValidator(settings=settings)
+        validator.validate()
 
     app.add_middleware(
         CORSMiddleware,
@@ -46,41 +55,6 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # app.add_middleware(RequestLoggingMiddleware)
-
-    # app.add_middleware(AuthMiddleware)
-
-    # # Middleware (muito comum no mercado): request_id em toda request/response
-    # app.add_middleware(RequestIdMiddleware)
-
-    # # --- Handlers mais comuns ---
-
-    # # 1) Suas exceções de aplicação (NotFound, Conflict, etc.)
-    # app.add_exception_handler(BaseAppException, app_exception_handler)
-
-    # # 2) Erros de validação do FastAPI/Pydantic (422)
-    # app.add_exception_handler(RequestValidationError, validation_exception_handler)
-
-    # # 3) HTTPException do Starlette/FastAPI (404, 405, e HTTPException que você lançar)
-    # app.add_exception_handler(StarletteHTTPException, http_exception_handler)
-
-    # # 4) Banco de dados (integridade / outros)
-    # app.add_exception_handler(IntegrityError, sqlalchemy_integrity_handler)  # unique/fk/not-null...
-    # app.add_exception_handler(SQLAlchemyError, sqlalchemy_error_handler)  # conexão/pool/driver...
-
-    # # 5) Timeouts (varia conforme como você aplica timeout; registrar ambos é ok)
-    # app.add_exception_handler(asyncio.TimeoutError, timeout_handler)
-    # app.add_exception_handler(TimeoutError, timeout_handler)
-
-    # # 6) Fallback (500)
-    # app.add_exception_handler(Exception, unhandled_exception_handler)
-
-    # # Exemplo: registrar suas rotas (separadas)
-    # # from src.modules.core.interfaces.http.routers.users import router as users_router
-    # # app.include_router(users_router, prefix="/api")
-
     app.include_router(auth_router)
-    # app.include_router(email_router.router)
-    # app.include_router(user_router.router)
 
     return app

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config.config import get_settings
 from src.core.infrastructure.database.settings.connection import get_session
+from src.modules.auth.application.services.auth_metrics_service import AuthMetricsService
 from src.modules.auth.application.services.jwt_service import JWTService
 from src.modules.auth.application.services.permission_evaluator import PermissionEvaluator
 from src.modules.auth.application.services.password_hasher import PasswordHasher
@@ -39,6 +40,7 @@ from src.modules.auth.infrastructure.repositories.user_tenant_role_repository_sq
 )
 
 _bearer_scheme = HTTPBearer(auto_error=False)
+_auth_metrics_service = AuthMetricsService()
 
 
 @dataclass(slots=True, frozen=True)
@@ -64,6 +66,10 @@ def get_permission_evaluator() -> PermissionEvaluator:
     return PermissionEvaluator()
 
 
+def get_auth_metrics_service() -> AuthMetricsService:
+    return _auth_metrics_service
+
+
 def get_register_usecase(
     session: AsyncSession = Depends(get_session),
 ) -> RegisterUseCase:
@@ -83,6 +89,7 @@ def get_login_usecase(
     password_hasher = get_password_hasher()
     jwt_service = get_jwt_service()
     refresh_token_security = get_refresh_token_security()
+    auth_metrics_service = get_auth_metrics_service()
 
     return LoginUseCase(
         user_repository=user_repository,
@@ -90,6 +97,7 @@ def get_login_usecase(
         password_hasher=password_hasher,
         jwt_service=jwt_service,
         refresh_token_security=refresh_token_security,
+        auth_metrics_service=auth_metrics_service,
     )
 
 
@@ -99,11 +107,13 @@ def get_refresh_session_usecase(
     refresh_session_repository = RefreshSessionRepositorySQLModel(session)
     jwt_service = get_jwt_service()
     refresh_token_security = get_refresh_token_security()
+    auth_metrics_service = get_auth_metrics_service()
 
     return RefreshSessionUseCase(
         refresh_session_repository=refresh_session_repository,
         jwt_service=jwt_service,
         refresh_token_security=refresh_token_security,
+        auth_metrics_service=auth_metrics_service,
     )
 
 
@@ -111,14 +121,22 @@ def get_logout_usecase(
     session: AsyncSession = Depends(get_session),
 ) -> LogoutUseCase:
     refresh_session_repository = RefreshSessionRepositorySQLModel(session)
-    return LogoutUseCase(refresh_session_repository=refresh_session_repository)
+    auth_metrics_service = get_auth_metrics_service()
+    return LogoutUseCase(
+        refresh_session_repository=refresh_session_repository,
+        auth_metrics_service=auth_metrics_service,
+    )
 
 
 def get_logout_all_usecase(
     session: AsyncSession = Depends(get_session),
 ) -> LogoutAllUseCase:
     refresh_session_repository = RefreshSessionRepositorySQLModel(session)
-    return LogoutAllUseCase(refresh_session_repository=refresh_session_repository)
+    auth_metrics_service = get_auth_metrics_service()
+    return LogoutAllUseCase(
+        refresh_session_repository=refresh_session_repository,
+        auth_metrics_service=auth_metrics_service,
+    )
 
 
 def get_me_usecase(
