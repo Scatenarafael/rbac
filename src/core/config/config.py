@@ -4,10 +4,12 @@ from functools import lru_cache
 from typing import Literal
 
 # from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-super-secret")
 
     ALGORITHM: str = "HS256"
@@ -35,10 +37,6 @@ class Settings(BaseSettings):
     SERVER_URL: str = os.getenv("SERVER_URL", "http://localhost:8005/api")
 
     ACCESS_SECRET: str = os.getenv("ACCESS_SECRET", "change-me-super-secret")
-
-    class Config:
-        env_file = ".env"
-
 
 @lru_cache
 def get_settings():
